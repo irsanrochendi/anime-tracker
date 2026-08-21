@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox, simpledialog
 import requests
 import threading
 import time
+import webbrowser
 
 try:
     from win11toast import notify
@@ -113,6 +114,33 @@ def fetch_latest_ep_str(season_id, title):
     except Exception:
         pass
 
+    return None
+
+def get_episode_watch_url(season_id, episode_num):
+    """
+    Ambil link nonton langsung (Bilibili) untuk nomor episode tertentu dari sebuah season_id.
+    Return None jika episode tidak ditemukan / gagal fetch.
+    """
+    if not season_id or not episode_num:
+        return None
+    try:
+        headers = {"User-Agent": UA, "Referer": f"https://www.bilibili.tv/play/{season_id}"}
+        url = "https://api.bilibili.tv/intl/gateway/web/v2/ogv/play/episodes"
+        params = {"s_locale": "en_US", "platform": "web", "season_id": season_id}
+        res = requests.get(url, headers=headers, params=params, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            for sec in data.get("data", {}).get("sections", []):
+                for ep in sec.get("episodes", []):
+                    short = ep.get("short_title_display", "")
+                    import re
+                    m = re.search(r'(\d+)', short)
+                    if m and int(m.group(1)) == int(episode_num):
+                        ep_id = ep.get("episode_id")
+                        if ep_id:
+                            return f"https://www.bilibili.tv/en/play/{season_id}/{ep_id}"
+    except Exception:
+        pass
     return None
 
 class BilibiliSearchDialog(tk.Toplevel):
@@ -489,6 +517,9 @@ class AnimeTrackerApp(tk.Tk):
         ttk.Button(shortcut_frame, text="-1", style="IncDec.TButton", command=lambda: self.quick_adjust_seq(-1)).pack(side=tk.LEFT, padx=2)
         ttk.Button(shortcut_frame, text="+1", style="IncDec.TButton", command=lambda: self.quick_adjust_seq(1)).pack(side=tk.LEFT, padx=2)
         
+        btn_watch_next = ttk.Button(shortcut_frame, text="▶️ Nonton Ep Selanjutnya", command=self.open_next_episode)
+        btn_watch_next.pack(side=tk.LEFT, padx=(10, 2))
+        
         # Bilibili Action Panel
         bili_act_frame = ttk.Frame(toolbar)
         bili_act_frame.pack(side=tk.LEFT, padx=20)
@@ -500,6 +531,37 @@ class AnimeTrackerApp(tk.Tk):
         
         btn_delete = ttk.Button(toolbar, text="Hapus Data", style="Danger.TButton", command=self.delete_item)
         btn_delete.pack(side=tk.RIGHT, padx=5)
+
+    def open_next_episode(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Pilih Data", "Pilih dulu baris anime di tabel.")
+            return
+        
+        bili_id = self.bili_id_var.get().strip()
+        if not bili_id:
+            messagebox.showwarning("Tidak Ada Bilibili ID", "Anime ini belum terhubung dengan Bilibili Season ID.\nGunakan 'Cari Anime' untuk menghubungkan.")
+            return
+        
+        try:
+            current_ep = int(self.episode_var.get())
+        except ValueError:
+            current_ep = 0
+        next_ep = current_ep + 1
+        
+        title = self.title_var.get()
+        
+        def thread_run():
+            url = get_episode_watch_url(bili_id, next_ep)
+            if url:
+                webbrowser.open(url)
+            else:
+                self.after(0, lambda: messagebox.showinfo(
+                    "Episode Tidak Ditemukan",
+                    f"Episode {next_ep} untuk '{title}' belum tersedia di Bilibili, atau data episode tidak ditemukan."
+                ))
+        
+        threading.Thread(target=thread_run, daemon=True).start()
 
     def change_val(self, var, delta):
         try:
