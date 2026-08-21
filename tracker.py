@@ -8,7 +8,7 @@ import threading
 import time
 
 try:
-    from win10toast import ToastNotifier
+    from win11toast import notify
     HAS_TOAST = True
 except ImportError:
     HAS_TOAST = False
@@ -293,7 +293,7 @@ class AnimeTrackerApp(tk.Tk):
         self.bili_latest_var = tk.StringVar()
         self.last_check_var = tk.StringVar(value="Belum pernah cek update")
         
-        self.notifier = ToastNotifier() if HAS_TOAST else None
+        self.notifier = HAS_TOAST
         
         self.setup_ui()
         self.load_data()
@@ -745,12 +745,9 @@ class AnimeTrackerApp(tk.Tk):
                 # Check window notification
                 bili_ep_num = parse_ep_num(latest_ep_str)
                 if bili_ep_num > user_ep and self.notifier:
-                    self.notifier.show_toast(
+                    notify(
                         "Anime Update!",
-                        f"Episode terbaru untuk '{title}' sudah rilis di Bilibili: {latest_ep_str}\n(Episode Anda saat ini: EP {user_ep})",
-                        duration=5,
-                        icon_path=None,
-                        threaded=True
+                        f"Episode terbaru untuk '{title}' sudah rilis di Bilibili: {latest_ep_str}\n(Episode Anda saat ini: EP {user_ep})"
                     )
         except Exception:
             pass
@@ -785,14 +782,10 @@ class AnimeTrackerApp(tk.Tk):
                     if bili_ep_num > user_ep:
                         has_new_releases = True
                         if self.notifier:
-                            self.notifier.show_toast(
+                            notify(
                                 "Anime Update!",
-                                f"Episode terbaru untuk '{title}' sudah rilis di Bilibili: {latest_ep_str}\n(Episode Anda saat ini: EP {user_ep})",
-                                duration=5,
-                                icon_path=None,
-                                threaded=True
+                                f"Episode terbaru untuk '{title}' sudah rilis di Bilibili: {latest_ep_str}\n(Episode Anda saat ini: EP {user_ep})"
                             )
-                            time.sleep(2) # Prevent notification throttle
             except Exception:
                 pass
                 

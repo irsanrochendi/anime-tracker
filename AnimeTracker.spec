@@ -1,12 +1,24 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_all
+
+datas = []
+binaries = []
+hiddenimports = ['win32api', 'win32con', 'requests', 'win11toast']
+
+for pkg in ['winrt', 'winrt.windows.data.xml.dom', 'winrt.windows.foundation',
+            'winrt.windows.ui.notifications']:
+    d, b, h = collect_all(pkg)
+    datas += d
+    binaries += b
+    hiddenimports += h
 
 a = Analysis(
     ['tracker.py'],
     pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=['win10toast', 'win32api', 'win32con', 'requests'],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
