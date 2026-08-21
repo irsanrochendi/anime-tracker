@@ -1,0 +1,4 @@
+requests
+win10toast; platform_system == "Windows"
+pywin32; platform_system == "Windows"
+pyinstaller
