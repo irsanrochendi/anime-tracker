@@ -183,10 +183,10 @@ class BilibiliSearchDialog(tk.Toplevel):
         self.tree.heading("latest_ep", text="Episode Terbaru")
         self.tree.heading("type", text="Tipe")
         
-        self.tree.column("title", width=280, anchor=tk.W)
-        self.tree.column("season_id", width=90, anchor=tk.CENTER)
-        self.tree.column("latest_ep", width=110, anchor=tk.CENTER)
-        self.tree.column("type", width=60, anchor=tk.CENTER)
+        self.tree.column("title", width=280, minwidth=150, anchor=tk.W, stretch=True)
+        self.tree.column("season_id", width=90, minwidth=80, anchor=tk.CENTER, stretch=False)
+        self.tree.column("latest_ep", width=110, minwidth=100, anchor=tk.CENTER, stretch=False)
+        self.tree.column("type", width=60, minwidth=55, anchor=tk.CENTER, stretch=False)
         
         scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -271,6 +271,7 @@ class AnimeTrackerApp(tk.Tk):
         super().__init__()
         self.title("Anime & Show Tracker")
         self.geometry("950x580")
+        self.minsize(760, 420)
         self.resizable(True, True)
         
         # Style Configuration
@@ -373,15 +374,17 @@ class AnimeTrackerApp(tk.Tk):
         # Left Panel (Editor / Creator Form)
         left_panel = ttk.LabelFrame(content_frame, text=" Data Entry ", padding=10)
         left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        left_panel.columnconfigure(0, weight=1)
+        left_panel.columnconfigure(1, weight=1)
         
         # Form Fields
-        ttk.Label(left_panel, text="Judul *").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Label(left_panel, text="Judul *").grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=3)
         self.title_entry = ttk.Entry(left_panel, textvariable=self.title_var, width=32)
-        self.title_entry.grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(0, 8))
+        self.title_entry.grid(row=1, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
         
-        ttk.Label(left_panel, text="Tipe").grid(row=2, column=0, sticky=tk.W, pady=3)
+        ttk.Label(left_panel, text="Tipe").grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=3)
         self.type_combo = ttk.Combobox(left_panel, textvariable=self.type_var, values=["Anime", "Movie", "Series", "Lainnya"], width=30, state="readonly")
-        self.type_combo.grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=(0, 8))
+        self.type_combo.grid(row=3, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
         
         # Season Control
         ttk.Label(left_panel, text="Season").grid(row=4, column=0, sticky=tk.W, pady=3)
@@ -408,23 +411,24 @@ class AnimeTrackerApp(tk.Tk):
         btn_inc_e.pack(side=tk.LEFT)
         
         # Status
-        ttk.Label(left_panel, text="Status").grid(row=8, column=0, sticky=tk.W, pady=3)
+        ttk.Label(left_panel, text="Status").grid(row=8, column=0, columnspan=2, sticky=tk.W, pady=3)
         self.status_combo = ttk.Combobox(left_panel, textvariable=self.status_var, values=["Watching", "Completed", "Plan to Watch", "Dropped"], width=30, state="readonly")
-        self.status_combo.grid(row=9, column=0, columnspan=2, sticky=tk.W, pady=(0, 8))
+        self.status_combo.grid(row=9, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
         
         # Bilibili Season Link
-        ttk.Label(left_panel, text="Bilibili Season ID").grid(row=10, column=0, sticky=tk.W, pady=3)
+        ttk.Label(left_panel, text="Bilibili Season ID").grid(row=10, column=0, columnspan=2, sticky=tk.W, pady=3)
         bili_frame = ttk.Frame(left_panel)
         bili_frame.grid(row=11, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
+        bili_frame.columnconfigure(0, weight=1)
         self.bili_entry = ttk.Entry(bili_frame, textvariable=self.bili_id_var, width=18)
-        self.bili_entry.pack(side=tk.LEFT)
+        self.bili_entry.grid(row=0, column=0, sticky=tk.EW)
         btn_bili_search = ttk.Button(bili_frame, text="Cari Anime", command=self.search_bilibili_id, width=12)
-        btn_bili_search.pack(side=tk.RIGHT, padx=(5,0))
+        btn_bili_search.grid(row=0, column=1, sticky=tk.E, padx=(5,0))
         
         # Notes
-        ttk.Label(left_panel, text="Catatan / Keterangan").grid(row=12, column=0, sticky=tk.W, pady=3)
+        ttk.Label(left_panel, text="Catatan / Keterangan").grid(row=12, column=0, columnspan=2, sticky=tk.W, pady=3)
         self.notes_entry = ttk.Entry(left_panel, textvariable=self.notes_var, width=32)
-        self.notes_entry.grid(row=13, column=0, columnspan=2, sticky=tk.W, pady=(0, 12))
+        self.notes_entry.grid(row=13, column=0, columnspan=2, sticky=tk.EW, pady=(0, 12))
         
         # Form buttons
         btn_save = ttk.Button(left_panel, text="Simpan / Tambah Data", style="Save.TButton", command=self.save_item)
@@ -449,15 +453,15 @@ class AnimeTrackerApp(tk.Tk):
         self.tree.heading("bili_latest", text="Update Bilibili")
         self.tree.heading("notes", text="Catatan")
         
-        self.tree.column("id", width=35, anchor=tk.CENTER)
-        self.tree.column("title", width=180, anchor=tk.W)
-        self.tree.column("type", width=65, anchor=tk.CENTER)
-        self.tree.column("season", width=45, anchor=tk.CENTER)
-        self.tree.column("episode", width=45, anchor=tk.CENTER)
-        self.tree.column("status", width=95, anchor=tk.CENTER)
-        self.tree.column("bili_id", width=65, anchor=tk.CENTER)
-        self.tree.column("bili_latest", width=140, anchor=tk.W)
-        self.tree.column("notes", width=100, anchor=tk.W)
+        self.tree.column("id", width=35, minwidth=35, anchor=tk.CENTER, stretch=False)
+        self.tree.column("title", width=180, minwidth=120, anchor=tk.W, stretch=True)
+        self.tree.column("type", width=65, minwidth=60, anchor=tk.CENTER, stretch=False)
+        self.tree.column("season", width=45, minwidth=40, anchor=tk.CENTER, stretch=False)
+        self.tree.column("episode", width=45, minwidth=40, anchor=tk.CENTER, stretch=False)
+        self.tree.column("status", width=95, minwidth=80, anchor=tk.CENTER, stretch=False)
+        self.tree.column("bili_id", width=65, minwidth=65, anchor=tk.CENTER, stretch=False)
+        self.tree.column("bili_latest", width=140, minwidth=110, anchor=tk.W, stretch=True)
+        self.tree.column("notes", width=100, minwidth=80, anchor=tk.W, stretch=True)
         
         scrollbar = ttk.Scrollbar(right_panel, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
