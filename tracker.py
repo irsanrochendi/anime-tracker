@@ -736,9 +736,14 @@ class AnimeTrackerApp(tk.Tk):
             latest_ep_str = fetch_latest_ep_str(season_id, title)
 
             if latest_ep_str:
-                # Save to DB
+                # Read old value first to detect real changes (avoid re-notifying every check)
                 conn = sqlite3.connect(DB_FILE)
                 cursor = conn.cursor()
+                cursor.execute("SELECT latest_episode_str FROM shows WHERE id=?", (show_id,))
+                row = cursor.fetchone()
+                old_ep_str = row[0] if row else None
+
+                # Save to DB
                 cursor.execute("UPDATE shows SET latest_episode_str=? WHERE id=?", (latest_ep_str, show_id))
                 conn.commit()
                 conn.close()
@@ -746,9 +751,11 @@ class AnimeTrackerApp(tk.Tk):
                 # Refresh UI
                 self.parent_refresh_callback()
                 
-                # Check window notification
+                # Notify only if the latest known episode actually went UP since last check
+                # AND it's still newer than what the user has watched.
+                old_ep_num = parse_ep_num(old_ep_str)
                 bili_ep_num = parse_ep_num(latest_ep_str)
-                if bili_ep_num > user_ep and self.notifier:
+                if bili_ep_num > old_ep_num and bili_ep_num > user_ep and self.notifier:
                     notify(
                         "Anime Update!",
                         f"Episode terbaru untuk '{title}' sudah rilis di Bilibili: {latest_ep_str}\n(Episode Anda saat ini: EP {user_ep})"
@@ -759,7 +766,7 @@ class AnimeTrackerApp(tk.Tk):
     def auto_check_updates(self, manual=False):
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute("SELECT id, title, episode, bilibili_season_id FROM shows WHERE bilibili_season_id IS NOT NULL AND status='Watching'")
+        cursor.execute("SELECT id, title, episode, bilibili_season_id, latest_episode_str FROM shows WHERE bilibili_season_id IS NOT NULL AND status='Watching'")
         shows_to_check = cursor.fetchall()
         conn.close()
         
@@ -771,7 +778,7 @@ class AnimeTrackerApp(tk.Tk):
         has_new_releases = False
         
         for show in shows_to_check:
-            show_id, title, user_ep, season_id = show
+            show_id, title, user_ep, season_id, old_ep_str = show
             try:
                 latest_ep_str = fetch_latest_ep_str(season_id, title)
 
@@ -782,10 +789,13 @@ class AnimeTrackerApp(tk.Tk):
                     conn.commit()
                     conn.close()
                     
+                    # Notify only if the latest known episode actually went UP since last check
+                    # AND it's still newer than what the user has watched.
+                    old_ep_num = parse_ep_num(old_ep_str)
                     bili_ep_num = parse_ep_num(latest_ep_str)
                     if bili_ep_num > user_ep:
                         has_new_releases = True
-                        if self.notifier:
+                        if bili_ep_num > old_ep_num and self.notifier:
                             notify(
                                 "Anime Update!",
                                 f"Episode terbaru untuk '{title}' sudah rilis di Bilibili: {latest_ep_str}\n(Episode Anda saat ini: EP {user_ep})"
