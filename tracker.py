@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import sqlite3
 import tkinter as tk
@@ -65,6 +66,19 @@ def parse_ep_num(ep_str):
     if match:
         return int(match.group(1))
     return 0
+
+def is_finished_airing(ep_str):
+    """
+    Deteksi anime yang sudah TAMAT TAYANG di Bilibili.
+    Kalau masih on-going, index_show berisi 'Update to EP N' / 'EP N' (ada angka).
+    Kalau sudah tamat, index_show jadi 'Full' (tanpa angka episode).
+    """
+    if not ep_str:
+        return False
+    s = ep_str.strip().lower()
+    if "full" in s and not re.search(r'\d', s):
+        return True
+    return False
 
 def fetch_latest_ep_str(season_id, title):
     """
@@ -161,65 +175,76 @@ class BilibiliSearchDialog(tk.Toplevel):
             self.do_search()
 
     def setup_ui(self, default_keyword):
-        # Search Bar
-        top_frame = ttk.Frame(self, padding=10)
-        top_frame.pack(fill=tk.X, side=tk.TOP)
-        
-        ttk.Label(top_frame, text="Keyword: ", font=("Segoe UI", 10)).pack(side=tk.LEFT)
-        self.keyword_entry = ttk.Entry(top_frame, width=40, font=("Segoe UI", 10))
-        self.keyword_entry.insert(0, default_keyword)
-        self.keyword_entry.pack(side=tk.LEFT, padx=5)
-        self.keyword_entry.bind("<Return>", lambda e: self.do_search())
-        
-        btn_search = ttk.Button(top_frame, text="Cari Anime", command=self.do_search)
-        btn_search.pack(side=tk.LEFT, padx=5)
-        
-        # Bottom Action Bar (Pack this first to guarantee visibility at the bottom)
-        bot_frame = ttk.Frame(self, padding=15)
-        bot_frame.pack(fill=tk.X, side=tk.BOTTOM)
-        
-        self.status_label = ttk.Label(bot_frame, text="Masukkan kata kunci pencarian...", foreground="gray", font=("Segoe UI", 9))
-        self.status_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        
-        # Define styles for the buttons inside the dialog
-        style = ttk.Style(self)
-        style.configure("BiliConfirm.TButton", font=("Segoe UI", 10, "bold"))
-        style.map("BiliConfirm.TButton",
-            foreground=[('pressed', '#ffffff'), ('active', '#ffffff'), ('', '#ffffff')],
-            background=[('pressed', '!disabled', '#2ecc71'), ('active', '#2ecc71'), ('', '#2ecc71')]
-        )
-        
-        style.configure("BiliCancel.TButton", font=("Segoe UI", 10, "bold"))
-        style.map("BiliCancel.TButton",
-            foreground=[('pressed', '#ffffff'), ('active', '#ffffff'), ('', '#ffffff')],
-            background=[('pressed', '!disabled', '#95a5a6'), ('active', '#95a5a6'), ('', '#95a5a6')]
-        )
-        
-        btn_cancel = ttk.Button(bot_frame, text="Cancel / Batal", style="BiliCancel.TButton", command=self.destroy)
-        btn_cancel.pack(side=tk.RIGHT, padx=5)
-        
-        btn_select = ttk.Button(bot_frame, text="Confirm / Pilih Anime", style="BiliConfirm.TButton", command=self.on_select)
-        btn_select.pack(side=tk.RIGHT, padx=5)
+        self.configure(background="#0F0F23")
 
-        # Results Table Container Frame (Fills the remaining middle space)
-        table_frame = ttk.Frame(self, padding=10)
+        # Search Bar
+        top_frame = ttk.Frame(self, padding=(12, 10, 12, 6))
+        top_frame.pack(fill=tk.X, side=tk.TOP)
+
+        ttk.Label(top_frame, text="Keyword:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+        self.keyword_entry = ttk.Entry(top_frame, width=42, font=("Segoe UI", 10))
+        self.keyword_entry.insert(0, default_keyword)
+        self.keyword_entry.pack(side=tk.LEFT, padx=(8, 0), ipady=3)
+        self.keyword_entry.bind("<Return>", lambda e: self.do_search())
+
+        btn_search = ttk.Button(top_frame, text="🔍 Cari", command=self.do_search)
+        btn_search.pack(side=tk.LEFT, padx=(8, 0))
+
+        # Bottom Action Bar
+        bot_frame = ttk.Frame(self, padding=(12, 8, 12, 12))
+        bot_frame.pack(fill=tk.X, side=tk.BOTTOM)
+
+        self.status_label = ttk.Label(bot_frame, text="Masukkan kata kunci pencarian...",
+                                      foreground="#94A3B8", font=("Segoe UI", 9))
+        self.status_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Define styles inside the dialog
+        style = ttk.Style(self)
+        style.configure("BiliConfirm.TButton",
+            font=("Segoe UI", 10, "bold"), borderwidth=0, relief="flat",
+            padding=(10, 5), focuscolor="none"
+        )
+        style.map("BiliConfirm.TButton",
+            foreground=[('pressed', '#F8FAFC'), ('active', '#F8FAFC'), ('', '#F8FAFC')],
+            background=[('pressed', '!disabled', '#15803D'), ('active', '#22C55E'), ('', '#22C55E')]
+        )
+
+        style.configure("BiliCancel.TButton",
+            font=("Segoe UI", 10, "bold"), borderwidth=0, relief="flat",
+            padding=(10, 5), focuscolor="none"
+        )
+        style.map("BiliCancel.TButton",
+            foreground=[('pressed', '#F8FAFC'), ('active', '#F8FAFC'), ('', '#94A3B8')],
+            background=[('pressed', '!disabled', '#312E81'), ('active', '#1E1B4B'), ('', '#1B1B30')]
+        )
+
+        btn_cancel = ttk.Button(bot_frame, text="✕ Batal", style="BiliCancel.TButton", command=self.destroy)
+        btn_cancel.pack(side=tk.RIGHT, padx=(5, 0))
+
+        btn_select = ttk.Button(bot_frame, text="✔ Pilih Anime", style="BiliConfirm.TButton", command=self.on_select)
+        btn_select.pack(side=tk.RIGHT, padx=(5, 5))
+
+        # accent separator
+        tk.Frame(self, background="#E11D48", height=1).pack(fill=tk.X, side=tk.TOP)
+
+        # Results Table
+        table_frame = ttk.Frame(self, padding=(10, 6, 10, 0))
         table_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         self.tree = ttk.Treeview(table_frame, columns=("title", "season_id", "latest_ep", "type"), show="headings")
-        self.tree.heading("title", text="Judul Anime")
+        self.tree.heading("title",     text="Judul Anime")
         self.tree.heading("season_id", text="Season ID")
         self.tree.heading("latest_ep", text="Episode Terbaru")
-        self.tree.heading("type", text="Tipe")
-        
-        self.tree.column("title", width=280, minwidth=150, anchor=tk.W, stretch=True)
-        self.tree.column("season_id", width=90, minwidth=80, anchor=tk.CENTER, stretch=False)
-        self.tree.column("latest_ep", width=110, minwidth=100, anchor=tk.CENTER, stretch=False)
-        self.tree.column("type", width=60, minwidth=55, anchor=tk.CENTER, stretch=False)
-        
+        self.tree.heading("type",      text="Tipe")
+
+        self.tree.column("title",     width=290, minwidth=150, anchor=tk.W,      stretch=True)
+        self.tree.column("season_id", width=90,  minwidth=80,  anchor=tk.CENTER, stretch=False)
+        self.tree.column("latest_ep", width=120, minwidth=100, anchor=tk.CENTER, stretch=False)
+        self.tree.column("type",      width=65,  minwidth=55,  anchor=tk.CENTER, stretch=False)
+
         scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
-        
-        # Pack scrollbar first to the right, then tree to fill the rest
+
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
@@ -298,9 +323,15 @@ class AnimeTrackerApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Anime & Show Tracker")
-        self.geometry("950x580")
-        self.minsize(760, 420)
+        self.geometry("1150x680")
+        self.minsize(1040, 480)
         self.resizable(True, True)
+        # Buka dalam kondisi maximize agar semua panel langsung terlihat;
+        # kalau di-restore ke ukuran normal pun layout tetap muat (lihat minsize).
+        try:
+            self.state("zoomed")
+        except tk.TclError:
+            pass
         
         # Style Configuration
         self.style = ttk.Style()
@@ -331,206 +362,345 @@ class AnimeTrackerApp(tk.Tk):
         threading.Thread(target=self.periodic_check_loop, daemon=True).start()
 
     def configure_colors(self):
-        self.style.configure(".", background="#f5f6f8", foreground="#2c3e50", font=("Segoe UI", 10))
-        self.style.configure("TLabel", background="#f5f6f8", font=("Segoe UI", 10))
-        self.style.configure("TFrame", background="#f5f6f8")
-        
-        self.style.configure("Header.TLabel", font=("Segoe UI", 14, "bold"), background="#f5f6f8", foreground="#2c3e50")
-        
-        self.style.configure("TButton", font=("Segoe UI", 9, "bold"), borderwidth=1, focuscolor="none")
+        # ── UI UX Pro Max · Dark Mode OLED × Video Streaming/OTT ─────────────
+        # Palette: cinematic deep dark + play-red accent + status green
+        BG_MAIN      = "#0F0F23"   # deep navy-black (page background)
+        BG_ALT       = "#181830"   # zebra row alt
+        BG_CARD      = "#1B1B30"   # card / panel surface
+        BG_HEADER    = "#13132A"   # topbar / column headers
+        FG_TEXT      = "#F8FAFC"   # primary text (near-white)
+        FG_MUTED     = "#94A3B8"   # secondary / placeholder text
+        ACCENT_RED   = "#E11D48"   # play accent (CTA primary)
+        ACCENT_RED_D = "#9F1239"   # pressed / hover darken
+        ACCENT_GREEN = "#22C55E"   # status OK / new episode
+        ACCENT_GREEN_D="#15803D"   # pressed / hover
+        ACCENT_BLUE  = "#4338CA"   # info / link
+        ACCENT_BLUE_D= "#3730A3"   # pressed
+        ACCENT_HILIT = "#1E1B4B"   # "new update" row highlight bg
+        ACCENT_ORANGE      = "#F59E0B"  # finished airing but user not done watching
+        ACCENT_ORANGE_LIGHT= "#3B2106"  # row bg for finished-not-done highlight
+        BORDER_COLOR = "#312E81"   # subtle border
+
+        # ── keep refs for setup_ui / load_data ────────────────────────────────
+        self.c_bg_main         = BG_MAIN
+        self.c_bg_alt          = BG_ALT
+        self.c_bg_card         = BG_CARD
+        self.c_fg_text         = FG_TEXT
+        self.c_fg_muted        = FG_MUTED
+        self.c_accent_blue     = ACCENT_BLUE
+        self.c_accent_blue_light = ACCENT_HILIT
+        self.c_accent_green    = ACCENT_GREEN
+        self.c_accent_red      = ACCENT_RED
+        self.c_accent_orange   = ACCENT_ORANGE
+        self.c_accent_orange_light = ACCENT_ORANGE_LIGHT
+        self.c_border          = BORDER_COLOR
+
+        self.configure(background=BG_MAIN)
+
+        # ── Base styles ────────────────────────────────────────────────────────
+        self.style.configure(".",
+            background=BG_MAIN, foreground=FG_TEXT,
+            font=("Segoe UI", 10), bordercolor=BORDER_COLOR,
+            troughcolor=BG_CARD, selectbackground=ACCENT_RED,
+            selectforeground=FG_TEXT
+        )
+        self.style.configure("TLabel",  background=BG_MAIN,  foreground=FG_TEXT,  font=("Segoe UI", 10))
+        self.style.configure("TFrame",  background=BG_MAIN)
+        self.style.configure("TEntry",
+            fieldbackground=BG_CARD, foreground=FG_TEXT,
+            insertcolor=FG_TEXT, bordercolor=BORDER_COLOR,
+            focuscolor=ACCENT_RED
+        )
+        self.style.configure("TCombobox",
+            fieldbackground=BG_CARD, foreground=FG_TEXT,
+            background=BG_CARD, arrowcolor=FG_MUTED,
+            bordercolor=BORDER_COLOR, selectbackground=ACCENT_RED
+        )
+        self.style.map("TCombobox",
+            fieldbackground=[("readonly", BG_CARD)],
+            foreground=[("readonly", FG_TEXT)],
+            background=[("readonly", BG_CARD)]
+        )
+        self.style.configure("TScrollbar",
+            background=BG_CARD, troughcolor=BG_MAIN,
+            arrowcolor=FG_MUTED, bordercolor=BG_MAIN
+        )
+
+        # ── Header ─────────────────────────────────────────────────────────────
+        self.style.configure("Header.TLabel",
+            font=("Segoe UI", 15, "bold"),
+            background=BG_MAIN, foreground=FG_TEXT
+        )
+        self.style.configure("AppHeader.TFrame", background=BG_HEADER)
+        self.style.configure("AppHeader.TLabel",
+            background=BG_HEADER, foreground=FG_TEXT, font=("Segoe UI", 10)
+        )
+
+        # ── Card / Panel ───────────────────────────────────────────────────────
+        self.style.configure("Card.TFrame",
+            background=BG_CARD, relief="flat", borderwidth=0
+        )
+        self.style.configure("CardLabel.TLabel",
+            background=BG_CARD, foreground=FG_MUTED,
+            font=("Segoe UI", 8, "bold")
+        )
+        self.style.configure("CardTitle.TLabel",
+            background=BG_CARD, foreground=FG_TEXT,
+            font=("Segoe UI", 11, "bold")
+        )
+
+        # ── Buttons ────────────────────────────────────────────────────────────
+        _btn_base = dict(font=("Segoe UI", 9, "bold"), borderwidth=0,
+                         relief="flat", padding=(8, 4), focuscolor="none")
+
+        # Default / generic → red accent (primary action)
+        self.style.configure("TButton", **_btn_base)
         self.style.map("TButton",
-            foreground=[('pressed', '#ffffff'), ('active', '#ffffff')],
-            background=[('pressed', '!disabled', '#2980b9'), ('active', '#3498db'), ('', '#3498db')]
+            foreground=[("pressed", FG_TEXT), ("active", FG_TEXT), ("", FG_TEXT)],
+            background=[("pressed", "!disabled", ACCENT_RED_D),
+                        ("active", ACCENT_RED), ("", ACCENT_RED)]
         )
-        
-        self.style.configure("Danger.TButton", font=("Segoe UI", 9, "bold"))
+
+        self.style.configure("Primary.TButton", **_btn_base)
+        self.style.map("Primary.TButton",
+            foreground=[("pressed", FG_TEXT), ("active", FG_TEXT), ("", FG_TEXT)],
+            background=[("pressed", "!disabled", ACCENT_BLUE_D),
+                        ("active", ACCENT_BLUE), ("", ACCENT_BLUE)]
+        )
+
+        self.style.configure("Success.TButton", **_btn_base)
+        self.style.map("Success.TButton",
+            foreground=[("pressed", FG_TEXT), ("active", FG_TEXT), ("", FG_TEXT)],
+            background=[("pressed", "!disabled", ACCENT_GREEN_D),
+                        ("active", ACCENT_GREEN), ("", ACCENT_GREEN)]
+        )
+
+        self.style.configure("Danger.TButton", **_btn_base)
         self.style.map("Danger.TButton",
-            foreground=[('pressed', '#ffffff'), ('active', '#ffffff')],
-            background=[('pressed', '!disabled', '#c0392b'), ('active', '#e74c3c'), ('', '#e74c3c')]
+            foreground=[("pressed", FG_TEXT), ("active", FG_TEXT), ("", FG_TEXT)],
+            background=[("pressed", "!disabled", ACCENT_RED_D),
+                        ("active", ACCENT_RED), ("", ACCENT_RED)]
         )
-        
-        self.style.configure("IncDec.TButton", font=("Segoe UI", 11, "bold"), width=3)
+
+        self.style.configure("Secondary.TButton",
+            font=("Segoe UI", 9), borderwidth=0, relief="flat",
+            padding=(8, 4), focuscolor="none"
+        )
+        self.style.map("Secondary.TButton",
+            foreground=[("pressed", FG_TEXT), ("active", FG_TEXT), ("", FG_MUTED)],
+            background=[("pressed", "!disabled", BORDER_COLOR),
+                        ("active", BG_ALT), ("", BG_CARD)]
+        )
+
+        self.style.configure("IncDec.TButton",
+            font=("Segoe UI", 10, "bold"), borderwidth=0,
+            relief="flat", padding=(4, 2), focuscolor="none", width=3
+        )
         self.style.map("IncDec.TButton",
-            foreground=[('pressed', '#ffffff'), ('active', '#ffffff')],
-            background=[('pressed', '!disabled', '#16a085'), ('active', '#1abc9c'), ('', '#1abc9c')]
+            foreground=[("pressed", FG_TEXT), ("active", FG_TEXT), ("", FG_MUTED)],
+            background=[("pressed", "!disabled", BORDER_COLOR),
+                        ("active", BG_ALT), ("", BG_CARD)]
         )
 
-        self.style.configure("Save.TButton", font=("Segoe UI", 10, "bold"))
-        self.style.map("Save.TButton",
-            foreground=[('pressed', '#ffffff'), ('active', '#ffffff'), ('', '#ffffff')],
-            background=[('pressed', '!disabled', '#2ecc71'), ('active', '#2ecc71'), ('', '#2ecc71')]
-        )
-
-        self.style.configure("Clear.TButton", font=("Segoe UI", 9))
-        self.style.map("Clear.TButton",
-            foreground=[('pressed', '#4f5d75'), ('active', '#4f5d75')],
-            background=[('pressed', '!disabled', '#d1d5db'), ('active', '#e5e7eb'), ('', '#e5e7eb')]
-        )
-
+        # ── Treeview ───────────────────────────────────────────────────────────
         self.style.configure("Treeview",
-            background="#ffffff",
-            fieldbackground="#ffffff",
-            rowheight=28,
-            font=("Segoe UI", 9)
+            background=BG_MAIN, fieldbackground=BG_MAIN,
+            foreground=FG_TEXT, rowheight=30,
+            font=("Segoe UI", 9), borderwidth=0, relief="flat"
+        )
+        self.style.configure("Treeview.Heading",
+            background=BG_HEADER, foreground=ACCENT_RED,
+            borderwidth=0, relief="flat",
+            font=("Segoe UI", 9, "bold"), padding=(4, 6)
         )
         self.style.map("Treeview",
-            background=[("selected", "#3498db")],
-            foreground=[("selected", "#ffffff")]
+            background=[("selected", ACCENT_BLUE)],
+            foreground=[("selected", FG_TEXT)]
+        )
+        self.style.map("Treeview.Heading",
+            background=[("active", BG_CARD)],
+            foreground=[("active", FG_TEXT)]
         )
 
     def setup_ui(self):
-        # 1. Main Header
-        header_frame = ttk.Frame(self, padding=(10, 10, 10, 5))
-        header_frame.pack(fill=tk.X)
-        
-        app_title = ttk.Label(header_frame, text="🎬 Tracker Anime / Movie / Series", style="Header.TLabel")
+        # 1. Header — cinematic topbar with accent underline
+        header_frame = ttk.Frame(self, style="AppHeader.TFrame", padding=(18, 14, 18, 14))
+        header_frame.pack(fill=tk.X, side=tk.TOP)
+
+        title_wrap = ttk.Frame(header_frame, style="AppHeader.TFrame")
+        title_wrap.pack(side=tk.LEFT)
+        app_title = ttk.Label(title_wrap, text="🎬  Anime & Show Tracker",
+                              style="Header.TLabel", background=self.c_bg_main)
+        app_title.configure(background="#13132A")
         app_title.pack(side=tk.LEFT)
-        
-        # Search area
-        search_frame = ttk.Frame(header_frame)
+
+        # Search on right
+        search_frame = ttk.Frame(header_frame, style="AppHeader.TFrame")
         search_frame.pack(side=tk.RIGHT)
-        
-        ttk.Label(search_frame, text="Cari: ").pack(side=tk.LEFT)
-        search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=20)
-        search_entry.pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text="🔍", style="AppHeader.TLabel",
+                  font=("Segoe UI", 11)).pack(side=tk.LEFT, padx=(0, 6))
+        search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=24, font=("Segoe UI", 10))
+        search_entry.pack(side=tk.LEFT, ipady=3)
         self.search_var.trace_add("write", lambda *args: self.load_data())
+
+        # accent underline separator
+        accent_bar = tk.Frame(self, background=self.c_accent_red, height=2)
+        accent_bar.pack(fill=tk.X, side=tk.TOP)
+
+        # 2. Main Content (left + right split)
+        content_frame = ttk.Frame(self)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(14, 0))
         
-        # 2. Main Content Split Panel
-        content_frame = ttk.Frame(self, padding=10)
-        content_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Left Panel (Editor / Creator Form)
-        left_panel = ttk.LabelFrame(content_frame, text=" Data Entry ", padding=10)
-        left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        # LEFT PANEL - Form Card
+        left_panel = ttk.Frame(content_frame, style="Card.TFrame")
+        left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 15))
         left_panel.columnconfigure(0, weight=1)
-        left_panel.columnconfigure(1, weight=1)
         
-        # Form Fields
-        ttk.Label(left_panel, text="Judul *").grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=3)
-        self.title_entry = ttk.Entry(left_panel, textvariable=self.title_var, width=32)
-        self.title_entry.grid(row=1, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
+        # Card header
+        card_header = ttk.Frame(left_panel, style="Card.TFrame")
+        card_header.pack(fill=tk.X, padx=12, pady=10)
+        ttk.Label(card_header, text="📝 Data Entry", style="CardTitle.TLabel").pack(anchor=tk.W)
         
-        ttk.Label(left_panel, text="Tipe").grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=3)
-        self.type_combo = ttk.Combobox(left_panel, textvariable=self.type_var, values=["Anime", "Movie", "Series", "Lainnya"], width=30, state="readonly")
-        self.type_combo.grid(row=3, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
+        # Form content area
+        form_inner = ttk.Frame(left_panel, style="Card.TFrame")
+        form_inner.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 12))
+        form_inner.columnconfigure(0, weight=1)
+        form_inner.columnconfigure(1, weight=1)
         
-        # Season Control
-        ttk.Label(left_panel, text="Season").grid(row=4, column=0, sticky=tk.W, pady=3)
-        season_frame = ttk.Frame(left_panel)
-        season_frame.grid(row=5, column=0, columnspan=2, sticky=tk.W, pady=(0, 8))
-        
-        btn_dec_s = ttk.Button(season_frame, text="-", style="IncDec.TButton", command=lambda: self.change_val(self.season_var, -1))
-        btn_dec_s.pack(side=tk.LEFT)
-        self.season_entry = ttk.Entry(season_frame, textvariable=self.season_var, width=8, justify="center")
+        # Title
+        ttk.Label(form_inner, text="Judul *", style="CardLabel.TLabel").grid(row=0, column=0, columnspan=2, sticky=tk.W)
+        self.title_entry = ttk.Entry(form_inner, textvariable=self.title_var, width=30, font=("Segoe UI", 10))
+        self.title_entry.grid(row=1, column=0, columnspan=2, sticky=tk.EW, pady=(1, 6))
+
+        # Type
+        ttk.Label(form_inner, text="Tipe", style="CardLabel.TLabel").grid(row=2, column=0, columnspan=2, sticky=tk.W)
+        self.type_combo = ttk.Combobox(form_inner, textvariable=self.type_var, values=["Anime", "Movie", "Series", "Lainnya"], width=28, state="readonly", font=("Segoe UI", 10))
+        self.type_combo.grid(row=3, column=0, columnspan=2, sticky=tk.EW, pady=(1, 6))
+
+        # Season / Episode in a 2-col grid
+        ttk.Label(form_inner, text="Season", style="CardLabel.TLabel").grid(row=4, column=0, sticky=tk.W)
+        ttk.Label(form_inner, text="Episode Terakhir", style="CardLabel.TLabel").grid(row=4, column=1, sticky=tk.W)
+
+        season_frame = ttk.Frame(form_inner)
+        season_frame.grid(row=5, column=0, sticky=tk.EW, pady=(1, 6), padx=(0, 5))
+        season_frame.columnconfigure(1, weight=1)
+        ttk.Button(season_frame, text="−", style="IncDec.TButton", command=lambda: self.change_val(self.season_var, -1), width=2).pack(side=tk.LEFT)
+        self.season_entry = ttk.Entry(season_frame, textvariable=self.season_var, width=6, justify="center", font=("Segoe UI", 9))
         self.season_entry.pack(side=tk.LEFT, padx=5)
-        btn_inc_s = ttk.Button(season_frame, text="+", style="IncDec.TButton", command=lambda: self.change_val(self.season_var, 1))
-        btn_inc_s.pack(side=tk.LEFT)
-        
-        # Episode Control
-        ttk.Label(left_panel, text="Episode terakhir ditonton").grid(row=6, column=0, sticky=tk.W, pady=3)
-        ep_frame = ttk.Frame(left_panel)
-        ep_frame.grid(row=7, column=0, columnspan=2, sticky=tk.W, pady=(0, 8))
-        
-        btn_dec_e = ttk.Button(ep_frame, text="-", style="IncDec.TButton", command=lambda: self.change_val(self.episode_var, -1))
-        btn_dec_e.pack(side=tk.LEFT)
-        self.episode_entry = ttk.Entry(ep_frame, textvariable=self.episode_var, width=8, justify="center")
+        ttk.Button(season_frame, text="+", style="IncDec.TButton", command=lambda: self.change_val(self.season_var, 1), width=2).pack(side=tk.LEFT)
+
+        ep_frame = ttk.Frame(form_inner)
+        ep_frame.grid(row=5, column=1, sticky=tk.EW, pady=(1, 6), padx=(5, 0))
+        ep_frame.columnconfigure(1, weight=1)
+        ttk.Button(ep_frame, text="−", style="IncDec.TButton", command=lambda: self.change_val(self.episode_var, -1), width=2).pack(side=tk.LEFT)
+        self.episode_entry = ttk.Entry(ep_frame, textvariable=self.episode_var, width=6, justify="center", font=("Segoe UI", 9))
         self.episode_entry.pack(side=tk.LEFT, padx=5)
-        btn_inc_e = ttk.Button(ep_frame, text="+", style="IncDec.TButton", command=lambda: self.change_val(self.episode_var, 1))
-        btn_inc_e.pack(side=tk.LEFT)
-        
-        # Status
-        ttk.Label(left_panel, text="Status").grid(row=8, column=0, columnspan=2, sticky=tk.W, pady=3)
-        self.status_combo = ttk.Combobox(left_panel, textvariable=self.status_var, values=["Watching", "Completed", "Plan to Watch", "Dropped"], width=30, state="readonly")
-        self.status_combo.grid(row=9, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
-        
-        # Bilibili Season Link
-        ttk.Label(left_panel, text="Bilibili Season ID").grid(row=10, column=0, columnspan=2, sticky=tk.W, pady=3)
-        bili_frame = ttk.Frame(left_panel)
-        bili_frame.grid(row=11, column=0, columnspan=2, sticky=tk.EW, pady=(0, 8))
+        ttk.Button(ep_frame, text="+", style="IncDec.TButton", command=lambda: self.change_val(self.episode_var, 1), width=2).pack(side=tk.LEFT)
+
+        # Status + Bilibili ID side by side (hemat ruang vertikal)
+        ttk.Label(form_inner, text="Status", style="CardLabel.TLabel").grid(row=6, column=0, sticky=tk.W)
+        bili_lbl = ttk.Label(form_inner, text="Bilibili ID", style="CardLabel.TLabel")
+        bili_lbl.grid(row=6, column=1, sticky=tk.W, padx=(8, 0))
+
+        self.status_combo = ttk.Combobox(form_inner, textvariable=self.status_var, values=["Watching", "Completed", "Plan to Watch", "Dropped"], width=13, state="readonly", font=("Segoe UI", 10))
+        self.status_combo.grid(row=7, column=0, sticky=tk.EW, pady=(1, 6), padx=(0, 5))
+
+        bili_frame = ttk.Frame(form_inner)
+        bili_frame.grid(row=7, column=1, sticky=tk.EW, pady=(1, 6), padx=(8, 0))
         bili_frame.columnconfigure(0, weight=1)
-        self.bili_entry = ttk.Entry(bili_frame, textvariable=self.bili_id_var, width=18)
+        self.bili_entry = ttk.Entry(bili_frame, textvariable=self.bili_id_var, width=12, font=("Segoe UI", 10))
         self.bili_entry.grid(row=0, column=0, sticky=tk.EW)
-        btn_bili_search = ttk.Button(bili_frame, text="Cari Anime", command=self.search_bilibili_id, width=12)
-        btn_bili_search.grid(row=0, column=1, sticky=tk.E, padx=(5,0))
-        
+        ttk.Button(bili_frame, text="🔍", style="IncDec.TButton", command=self.search_bilibili_id, width=3).grid(row=0, column=1, padx=(4, 0))
+
         # Notes
-        ttk.Label(left_panel, text="Catatan / Keterangan").grid(row=12, column=0, columnspan=2, sticky=tk.W, pady=3)
-        self.notes_entry = ttk.Entry(left_panel, textvariable=self.notes_var, width=32)
-        self.notes_entry.grid(row=13, column=0, columnspan=2, sticky=tk.EW, pady=(0, 12))
+        ttk.Label(form_inner, text="Catatan", style="CardLabel.TLabel").grid(row=8, column=0, columnspan=2, sticky=tk.W)
+        self.notes_entry = ttk.Entry(form_inner, textvariable=self.notes_var, width=30, font=("Segoe UI", 10))
+        self.notes_entry.grid(row=9, column=0, columnspan=2, sticky=tk.EW, pady=(1, 8))
+
+        # Buttons
+        btn_save = ttk.Button(form_inner, text="💾 Simpan", style="Success.TButton", command=self.save_item)
+        btn_save.grid(row=10, column=0, sticky=tk.EW, pady=(2, 3), padx=(0, 3))
+        btn_clear = ttk.Button(form_inner, text="↻ Reset", style="Secondary.TButton", command=self.clear_form)
+        btn_clear.grid(row=10, column=1, sticky=tk.EW, pady=(2, 3), padx=(3, 0))
         
-        # Form buttons
-        btn_save = ttk.Button(left_panel, text="Simpan / Tambah Data", style="Save.TButton", command=self.save_item)
-        btn_save.grid(row=14, column=0, columnspan=2, sticky=tk.EW, pady=8)
-        
-        btn_clear = ttk.Button(left_panel, text="Reset Form", style="Clear.TButton", command=self.clear_form)
-        btn_clear.grid(row=15, column=0, columnspan=2, sticky=tk.EW, pady=4)
-        
-        # Right Panel
+        # RIGHT PANEL - Table + Toolbar
         right_panel = ttk.Frame(content_frame)
         right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
-        # Treeview (Table)
-        self.tree = ttk.Treeview(right_panel, columns=("id", "title", "type", "season", "episode", "status", "bili_id", "bili_latest", "notes"), show="headings")
+        # Table
+        self.tree = ttk.Treeview(right_panel, columns=("id", "title", "type", "season", "episode", "status", "bili_id", "bili_latest", "notes"), show="headings", height=10)
         self.tree.heading("id", text="ID")
         self.tree.heading("title", text="Judul")
         self.tree.heading("type", text="Tipe")
-        self.tree.heading("season", text="Sqn")
+        self.tree.heading("season", text="S")
         self.tree.heading("episode", text="Ep")
         self.tree.heading("status", text="Status")
         self.tree.heading("bili_id", text="Bili ID")
         self.tree.heading("bili_latest", text="Update Bilibili")
         self.tree.heading("notes", text="Catatan")
         
-        self.tree.column("id", width=35, minwidth=35, anchor=tk.CENTER, stretch=False)
-        self.tree.column("title", width=180, minwidth=120, anchor=tk.W, stretch=True)
-        self.tree.column("type", width=65, minwidth=60, anchor=tk.CENTER, stretch=False)
-        self.tree.column("season", width=45, minwidth=40, anchor=tk.CENTER, stretch=False)
-        self.tree.column("episode", width=45, minwidth=40, anchor=tk.CENTER, stretch=False)
-        self.tree.column("status", width=95, minwidth=80, anchor=tk.CENTER, stretch=False)
-        self.tree.column("bili_id", width=65, minwidth=65, anchor=tk.CENTER, stretch=False)
-        self.tree.column("bili_latest", width=140, minwidth=110, anchor=tk.W, stretch=True)
+        self.tree.column("id", width=30, minwidth=30, anchor=tk.CENTER, stretch=False)
+        self.tree.column("title", width=150, minwidth=100, anchor=tk.W, stretch=True)
+        self.tree.column("type", width=55, minwidth=50, anchor=tk.CENTER, stretch=False)
+        self.tree.column("season", width=35, minwidth=30, anchor=tk.CENTER, stretch=False)
+        self.tree.column("episode", width=40, minwidth=35, anchor=tk.CENTER, stretch=False)
+        self.tree.column("status", width=90, minwidth=70, anchor=tk.CENTER, stretch=False)
+        self.tree.column("bili_id", width=60, minwidth=55, anchor=tk.CENTER, stretch=False)
+        self.tree.column("bili_latest", width=130, minwidth=100, anchor=tk.W, stretch=True)
         self.tree.column("notes", width=100, minwidth=80, anchor=tk.W, stretch=True)
         
         scrollbar = ttk.Scrollbar(right_panel, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         
-        self.tree.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, after=self.tree)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Color tag rows if there is update!
-        self.tree.tag_configure("has_update", background="#e8f8f5", foreground="#117864")
+        # Alternating row colors tag
+        self.tree.tag_configure("oddrow", background=self.c_bg_main, foreground=self.c_fg_text)
+        self.tree.tag_configure("evenrow", background=self.c_bg_alt, foreground=self.c_fg_text)
+        self.tree.tag_configure("has_update", background=self.c_accent_blue_light, foreground=self.c_accent_green)
+        self.tree.tag_configure("finished_not_done", background=self.c_accent_orange_light, foreground=self.c_accent_orange)
         
         self.tree.bind("<<TreeviewSelect>>", self.on_select_row)
         
-        # Action Toolbar
-        toolbar = ttk.Frame(right_panel, padding=(0, 10, 0, 0))
+        # 3. Bottom Toolbar
+        toolbar = ttk.Frame(self, padding=(15, 10, 15, 12))
         toolbar.pack(side=tk.BOTTOM, fill=tk.X)
         
-        shortcut_frame = ttk.LabelFrame(toolbar, text=" Quick Update (Pilih Baris) ", padding=5)
-        shortcut_frame.pack(side=tk.LEFT, fill=tk.Y)
+        # Left group: Quick update
+        left_toolbar = ttk.Frame(toolbar)
+        left_toolbar.pack(side=tk.LEFT, fill=tk.Y)
         
-        ttk.Label(shortcut_frame, text="Ep: ").pack(side=tk.LEFT, padx=2)
-        ttk.Button(shortcut_frame, text="-1", style="IncDec.TButton", command=lambda: self.quick_adjust_ep(-1)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(shortcut_frame, text="+1", style="IncDec.TButton", command=lambda: self.quick_adjust_ep(1)).pack(side=tk.LEFT, padx=2)
+        ttk.Label(left_toolbar, text="⚡ Update:", font=("Segoe UI", 9, "bold"), foreground=self.c_fg_muted).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Label(left_toolbar, text="Ep:", font=("Segoe UI", 9)).pack(side=tk.LEFT, padx=(0, 3))
+        ttk.Button(left_toolbar, text="−1", style="IncDec.TButton", width=3, command=lambda: self.quick_adjust_ep(-1)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(left_toolbar, text="+1", style="IncDec.TButton", width=3, command=lambda: self.quick_adjust_ep(1)).pack(side=tk.LEFT, padx=2)
         
-        ttk.Label(shortcut_frame, text="  Seq: ").pack(side=tk.LEFT, padx=2)
-        ttk.Button(shortcut_frame, text="-1", style="IncDec.TButton", command=lambda: self.quick_adjust_seq(-1)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(shortcut_frame, text="+1", style="IncDec.TButton", command=lambda: self.quick_adjust_seq(1)).pack(side=tk.LEFT, padx=2)
+        ttk.Label(left_toolbar, text="  S:", font=("Segoe UI", 9)).pack(side=tk.LEFT, padx=(15, 3))
+        ttk.Button(left_toolbar, text="−1", style="IncDec.TButton", width=3, command=lambda: self.quick_adjust_seq(-1)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(left_toolbar, text="+1", style="IncDec.TButton", width=3, command=lambda: self.quick_adjust_seq(1)).pack(side=tk.LEFT, padx=2)
         
-        btn_watch_next = ttk.Button(shortcut_frame, text="▶️ Nonton Ep Selanjutnya", command=self.open_next_episode)
-        btn_watch_next.pack(side=tk.LEFT, padx=(10, 2))
+        ttk.Button(left_toolbar, text="▶️ Nonton", command=self.open_next_episode).pack(side=tk.LEFT, padx=(15, 0))
         
-        # Bilibili Action Panel
-        bili_act_frame = ttk.Frame(toolbar)
-        bili_act_frame.pack(side=tk.LEFT, padx=20)
+        # Middle group: Bilibili check
+        mid_toolbar = ttk.Frame(toolbar)
+        mid_toolbar.pack(side=tk.LEFT, fill=tk.Y, padx=(40, 40))
         
-        btn_check_now = ttk.Button(bili_act_frame, text="🔄 Cek Update Episode", command=self.trigger_manual_check)
-        btn_check_now.pack(side=tk.LEFT)
+        ttk.Button(mid_toolbar, text="🔄 Cek Update", style="Primary.TButton", command=self.trigger_manual_check).pack(side=tk.LEFT)
+        ttk.Label(mid_toolbar, textvariable=self.last_check_var, font=("Segoe UI", 8), foreground=self.c_fg_muted).pack(side=tk.LEFT, padx=(10, 0))
         
-        ttk.Label(bili_act_frame, textvariable=self.last_check_var, foreground="gray", font=("Segoe UI", 8)).pack(side=tk.LEFT, padx=8)
-        
-        btn_delete = ttk.Button(toolbar, text="Hapus Data", style="Danger.TButton", command=self.delete_item)
-        btn_delete.pack(side=tk.RIGHT, padx=5)
+        # Right group: Delete
+        ttk.Button(toolbar, text="🗑️ Hapus", style="Danger.TButton", command=self.delete_item).pack(side=tk.RIGHT)
+
+        # Color legend (klik baris tapi lupa arti warna -> selalu ada di toolbar)
+        legend = ttk.Frame(toolbar)
+        legend.pack(side=tk.RIGHT, padx=(0, 12))
+        ttk.Label(legend, text="●", font=("Segoe UI", 9, "bold"), foreground=self.c_accent_green).pack(side=tk.LEFT)
+        ttk.Label(legend, text="Update baru  ", font=("Segoe UI", 8), foreground=self.c_fg_muted).pack(side=tk.LEFT)
+        ttk.Label(legend, text="●", font=("Segoe UI", 9, "bold"), foreground=self.c_accent_orange).pack(side=tk.LEFT)
+        ttk.Label(legend, text="Tamat tayang, belum selesai  ", font=("Segoe UI", 8), foreground=self.c_fg_muted).pack(side=tk.LEFT)
+        ttk.Label(legend, text="●", font=("Segoe UI", 9, "bold"), foreground=self.c_fg_text).pack(side=tk.LEFT)
+        ttk.Label(legend, text="Aman", font=("Segoe UI", 8), foreground=self.c_fg_muted).pack(side=tk.LEFT)
 
     def open_next_episode(self):
         selected = self.tree.selection()
@@ -600,20 +770,32 @@ class AnimeTrackerApp(tk.Tk):
         else:
             cursor.execute("SELECT id, title, type, season, episode, status, bilibili_season_id, latest_episode_str, notes FROM shows ORDER BY id DESC")
             
-        for row in cursor.fetchall():
+        for idx, row in enumerate(cursor.fetchall()):
             row_id, title, show_type, season, episode, status, bili_id, bili_latest, notes = row
             
             # Show update indicators
-            tags = ()
+            base_tag = "evenrow" if idx % 2 == 0 else "oddrow"
+            tags = (base_tag,)
             display_latest = bili_latest if bili_latest else "-"
-            
+            status_l = (status or "").strip().lower()
+
             if bili_id and bili_latest:
-                bili_ep_num = parse_ep_num(bili_latest)
-                if bili_ep_num > episode:
-                    tags = ("has_update",)
-                    display_latest = f"🔴 Baru (EP {bili_ep_num})"
-                else:
-                    display_latest = f"✅ Up-to-date ({bili_latest})"
+                if is_finished_airing(bili_latest):
+                    if status_l == "completed":
+                        # Tamat tayang DAN kamu sudah menuntaskan nontonnya
+                        display_latest = f"🏁 Full — selesai ({bili_latest})"
+                    else:
+                        # TAMAT TAYANG tapi kamu masih on-going -> inilah yang dulu bikin bingung (baris putih)
+                        tags = ("finished_not_done",)
+                        display_latest = f"🏁 Tamat tayang — belum selesai (kamu di EP {episode or 0})"
+
+                if not is_finished_airing(bili_latest):
+                    bili_ep_num = parse_ep_num(bili_latest)
+                    if bili_ep_num > episode:
+                        tags = ("has_update",)
+                        display_latest = f"🔴 Baru (EP {bili_ep_num})"
+                    else:
+                        display_latest = f"✅ Up-to-date ({bili_latest})"
             
             self.tree.insert("", tk.END, values=(
                 row_id, title, show_type, season, episode, status, bili_id if bili_id else "-", display_latest, notes if notes else ""
@@ -869,8 +1051,26 @@ class AnimeTrackerApp(tk.Tk):
         self.after(0, lambda: self.last_check_var.set(f"Cek terakhir: {time.strftime('%H:%M:%S')}"))
         
         if manual:
+            # Hitung anime tamat tayang tapi user belum menuntaskan (biar pesannya tidak menyesatkan)
+            try:
+                conn2 = sqlite3.connect(DB_FILE)
+                cur2 = conn2.cursor()
+                cur2.execute("SELECT title, episode FROM shows WHERE bilibili_season_id IS NOT NULL AND status='Watching'")
+                pending = [(t, e) for t, e in cur2.fetchall()]
+                conn2.close()
+            except Exception:
+                pending = []
+
             if has_new_releases:
                 messagebox.showinfo("Cek Update Selesai", "Ada update episode baru! Detail rilis ditandai warna hijau di tabel.")
+            elif pending:
+                names = "\n".join(f"• {t} (kamu di EP {e})" for t, e in pending[:8])
+                more = f"\n… dan {len(pending)-8} lainnya" if len(pending) > 8 else ""
+                messagebox.showwarning(
+                    "Cek Update Selesai",
+                    f"Tidak ada episode baru, tapi masih ada {len(pending)} anime tamat tayang yang belum selesai kamu tonton "
+                    f"(ditandai oranye di tabel):\n\n{names}{more}"
+                )
             else:
                 messagebox.showinfo("Cek Update Selesai", "Semua anime Anda sudah up-to-date!")
 
