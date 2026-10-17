@@ -4,9 +4,10 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = []
 binaries = []
-hiddenimports = ['win32api', 'win32con', 'requests', 'win11toast']
+hiddenimports = ['win32api', 'win32con', 'requests', 'win11toast', 'PIL._tkinter_finder']
 
-for pkg in ['winrt', 'winrt.windows.data.xml.dom', 'winrt.windows.foundation',
+# customtkinter butuh file tema JSON & font-nya ikut dibundel.
+for pkg in ['customtkinter', 'winrt', 'winrt.windows.data.xml.dom', 'winrt.windows.foundation',
             'winrt.windows.ui.notifications']:
     d, b, h = collect_all(pkg)
     datas += d
