@@ -1,6 +1,32 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+import re
+
 from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.win32.versioninfo import (
+    FixedFileInfo, StringFileInfo, StringStruct, StringTable, VarFileInfo, VarStruct, VSVersionInfo,
+)
+
+# Versi diambil dari animetracker/__init__.py (satu sumber) dan ditanam ke metadata .exe
+# (klik kanan -> Properties -> Details).
+with open(os.path.join(SPECPATH, 'animetracker', '__init__.py'), encoding='utf-8') as f:
+    APP_VERSION = re.search(r'__version__\s*=\s*"([^"]+)"', f.read()).group(1)
+_v = tuple(int(x) for x in (APP_VERSION.split('.') + ['0', '0', '0'])[:4])
+
+version_info = VSVersionInfo(
+    ffi=FixedFileInfo(filevers=_v, prodvers=_v),
+    kids=[
+        StringFileInfo([StringTable('040904B0', [
+            StringStruct('ProductName', 'Anime & Show Tracker'),
+            StringStruct('FileDescription', 'Anime & Show Tracker'),
+            StringStruct('FileVersion', APP_VERSION),
+            StringStruct('ProductVersion', APP_VERSION),
+            StringStruct('OriginalFilename', 'AnimeTracker.exe'),
+        ])]),
+        VarFileInfo([VarStruct('Translation', [1033, 1200])]),
+    ],
+)
 
 datas = []
 binaries = []
@@ -48,4 +74,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    version=version_info,
 )
