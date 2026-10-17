@@ -1,83 +1,207 @@
+<div align="center">
+
 # 🎬 Anime & Show Tracker
 
-Aplikasi desktop (Windows) untuk mencatat tontonan **Anime, Movie, dan TV Series**. Info episode terbaru diambil otomatis dari **Bilibili (Bstation)** untuk anime dan dari **TMDB** untuk film & series. Ada poster, filter, statistik, dan notifikasi Windows saat episode baru rilis.
+**Catat tontonan Anime, Film, dan Series dalam satu aplikasi. Aplikasi ini memberi tahu kamu begitu episode baru rilis.**
+
+[![Version](https://img.shields.io/badge/versi-2.0.1-E11D48?style=for-the-badge)](CHANGELOG.md)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?style=for-the-badge&logo=windows&logoColor=white)](#-instalasi)
+[![CustomTkinter](https://img.shields.io/badge/UI-CustomTkinter-6366F1?style=for-the-badge)](https://github.com/TomSchimansky/CustomTkinter)
+
+[![Bilibili](https://img.shields.io/badge/Data-Bilibili%20(Bstation)-00A1D6?style=flat-square&logo=bilibili&logoColor=white)](https://www.bilibili.tv/)
+[![TMDB](https://img.shields.io/badge/Data-TMDB-01B4E4?style=flat-square&logo=themoviedatabase&logoColor=white)](https://www.themoviedb.org/)
+
+<img src="docs/screenshots/main-dark.png" alt="Tampilan utama Anime & Show Tracker (mode gelap)" width="900">
+
+[Fitur](#-fitur) · [Screenshot](#-screenshot) · [Instalasi](#-instalasi) · [TMDB](#-mengaktifkan-tmdb-opsional) · [Build .exe](#-build-exe) · [Changelog](CHANGELOG.md)
+
+</div>
+
+---
 
 ## ✨ Fitur
 
-- **UI modern (CustomTkinter)**: daftar berbentuk kartu dengan poster, mode **Dark / Light / System**, dan sudah menyesuaikan layar HiDPI.
-- **Dua sumber data**
-  - **Bilibili**: cari anime dari dalam aplikasi, lacak episode terbaru, dan tombol **▶ Nonton** langsung membuka episode berikutnya.
-  - **TMDB**: film dan series di luar Bilibili, dengan deteksi episode baru per season, tanggal tayang episode berikutnya, dan tanggal rilis film. Butuh API key gratis, lihat di bawah.
-- **Poster otomatis** dari Bilibili/TMDB. Poster di-cache di folder `posters/`, dan judul tanpa poster mendapat gambar inisial.
-- **Filter & urutan**: status (sidebar, beserta jumlahnya), tipe, pencarian live judul/catatan, "Hanya yang perlu perhatian", dan urutan *Update dulu / Terbaru ditambah / Terakhir diubah / Judul A–Z / Status*.
-- **Statistik**: total judul, episode ditonton, perkiraan jam nonton, persentase selesai, serta grafik per status, per tipe, dan per sumber data.
-- **Indikator status** di setiap kartu:
-  - 🟢 **Baru**: ada episode yang belum kamu tonton
-  - 🟠 **Tamat tayang, belum selesai**
-  - 🔵 **Film sudah rilis**, belum ditonton
-  - ✅ **Up-to-date**, plus tanggal episode berikutnya jika diketahui
-- **Cek update otomatis** di background (interval bisa diatur: 15 menit sampai 6 jam) dan manual lewat tombol **🔄 Cek Update** / `F5`.
-- **Notifikasi Windows** hanya muncul saat episode terbaru benar-benar naik sejak cek terakhir, jadi tidak spam setiap kali aplikasi dibuka. Klik notifikasinya untuk membuka halaman show.
-- **Quick update**: tombol `−` / `+1` episode langsung di kartu. Double-click kartu untuk mengedit.
-- **Shortcut**: `Ctrl+N` tambah, `Ctrl+F` cari, `F5` cek update, `Ctrl+Enter` simpan form.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-## 🔑 Mengaktifkan TMDB (opsional)
+### 🔔 Tidak ketinggalan episode
+- Episode terbaru dicek otomatis di background, dengan interval **15 menit sampai 6 jam**.
+- **Notifikasi Windows** muncul begitu episode baru rilis, tanpa spam setiap kali aplikasi dibuka.
+- Penanda warna di setiap kartu:
+  - 🟢 **ada episode baru**
+  - 🟠 **sudah tamat, belum selesai ditonton**
+  - 🔵 **film sudah rilis**
+  - ✅ **up-to-date**, plus jadwal episode berikutnya
 
-1. Buat akun gratis di [themoviedb.org](https://www.themoviedb.org/), lalu buka **Settings → API** dan minta API key.
-2. Di aplikasi, buka **⚙ Pengaturan**, tempel **API Key** (v3) atau **API Read Access Token** (v4), lalu klik **Tes**.
-3. Di form tambah/edit, klik **🔍 Cari di TMDB** untuk menautkan film/series.
+</td>
+<td width="50%" valign="top">
 
-API key disimpan di `settings.json` di sebelah database dan tidak ikut di-commit ke git.
+### ▶️ Langsung nonton
+- Tombol **Nonton** membuka **episode berikutnya** di Bilibili, tepat di episode yang kamu tuju.
+- Kalau episodenya belum rilis atau anime sudah tamat, kamu diberi tahu, dengan tawaran menandainya *Completed*.
+- Tombol **+1 / −** untuk update episode dalam satu klik.
 
-## 🛠️ Persyaratan
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-- Python **3.10+**
-- Windows 10/11 (untuk notifikasi `win11toast`)
+### 🖼️ Tampilan modern
+- Kartu dengan **poster otomatis** dari Bilibili/TMDB.
+- Mode **Dark / Light / System**.
+- Tampil tajam di layar HiDPI.
 
-## ⚙️ Menjalankan (development)
+</td>
+<td valign="top">
+
+### 🌐 Dua sumber data
+- **Bilibili (Bstation)** untuk anime: cari dan tautkan langsung dari aplikasi.
+- **TMDB** untuk film dan series: deteksi episode baru per season dan tanggal rilis film.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🔎 Filter & urutan
+- Filter **status** dan **tipe** (Anime / Movie / Series / Lainnya).
+- **Pencarian live** judul dan catatan.
+- Filter *"Hanya yang perlu perhatian"*.
+- Urutan: *Update dulu, Terbaru, Terakhir diubah, Judul A–Z, Status*.
+
+</td>
+<td valign="top">
+
+### 📊 Statistik
+- Total judul, episode ditonton, dan **perkiraan jam nonton**.
+- Persentase selesai.
+- Grafik per status, per tipe, dan per sumber data.
+
+</td>
+</tr>
+</table>
+
+> 💾 **Data aman.** Semua data disimpan lokal di SQLite di sebelah `.exe`. Saat upgrade dari versi lama, database **otomatis dibackup** dulu.
+
+## 📸 Screenshot
+
+<div align="center">
+
+| Mode gelap | Mode terang |
+|:---:|:---:|
+| <img src="docs/screenshots/main-dark.png" alt="Mode gelap" width="440"> | <img src="docs/screenshots/main-light.png" alt="Mode terang" width="440"> |
+
+| Tambah / edit tontonan | Cari di Bilibili | Statistik |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/form.png" alt="Form tambah/edit" width="290"> | <img src="docs/screenshots/search.png" alt="Pencarian Bilibili" width="290"> | <img src="docs/screenshots/stats.png" alt="Statistik" width="290"> |
+
+</div>
+
+## 🚀 Instalasi
+
+> **Butuh:** Windows 10/11 dan Python **3.10+**
 
 ```bash
-git clone git@github.com:irsanrochendi/anime-tracker.git
+git clone https://github.com/irsanrochendi/anime-tracker.git
 cd anime-tracker
 python -m venv venv
-.\venv\Scripts\activate
+venv\Scripts\activate
 pip install -r requirements.txt
 python tracker.py
 ```
 
-Menjalankan test:
+### Cara pakai singkat
+1. Klik **＋ Tambah** (`Ctrl+N`), lalu isi judulnya.
+2. Klik **🔍 Cari di Bilibili** (anime) atau **🔍 Cari di TMDB** (film/series), pilih hasilnya, lalu poster dan info episode akan terisi otomatis.
+3. Setiap selesai nonton, klik **+1**. Saat mau nonton lagi, klik **▶ Nonton**.
+
+### ⌨️ Shortcut
+
+| Tombol | Fungsi |
+|---|---|
+| `Ctrl` + `N` | Tambah tontonan |
+| `Ctrl` + `F` | Cari |
+| `F5` | Cek update episode |
+| `Ctrl` + `Enter` | Simpan form |
+| `Esc` | Tutup dialog |
+| *Double-click* kartu | Edit |
+
+## 🔑 Mengaktifkan TMDB (opsional)
+
+TMDB dipakai untuk film dan series di luar Bilibili. API key-nya **gratis**:
+
+1. Daftar di [themoviedb.org](https://www.themoviedb.org/), lalu **verifikasi email**.
+2. Buka [Settings → API](https://www.themoviedb.org/settings/api) → **Create** → **Developer**, lalu isi formulirnya. Untuk *Application URL*, pakai URL lengkap seperti `https://github.com/<username>/anime-tracker`.
+3. Di aplikasi, buka **⚙ Pengaturan**, tempel **API Key** atau **API Read Access Token**, klik **Tes**, lalu **Simpan**.
+
+> 🔒 API key disimpan di `settings.json` di komputer kamu dan **tidak ikut ter-commit** ke git.
+
+## 📦 Build `.exe`
+
+```bash
+python -m PyInstaller AnimeTracker.spec --noconfirm
+```
+
+Hasilnya `dist/AnimeTracker.exe`, satu file tanpa perlu instal Python. Versi aplikasi ikut tertanam di metadata file (*Properties → Details*). Database, `settings.json`, dan folder `posters/` dibuat di sebelah `.exe`.
+
+<details>
+<summary><b>🔄 Upgrade dari versi 1.x</b></summary>
+
+<br>
+
+Tidak ada langkah tambahan. Saat pertama dibuka, versi 2 menambah kolom baru ke database dan **membuat backup** `tracker_db.sqlite.bak-<tanggal>` lebih dulu. Poster untuk anime yang sudah terhubung ke Bilibili diunduh otomatis pada pengecekan update pertama.
+
+</details>
+
+<details>
+<summary><b>🧩 Struktur kode</b></summary>
+
+<br>
+
+```
+tracker.py                 entry point (dipakai juga oleh PyInstaller)
+animetracker/
+├── config.py              path data, konstanta, settings.json
+├── db.py                  SQLite: migrasi + CRUD
+├── logic.py               logika murni: status episode, notifikasi, tombol Nonton
+├── updater.py             cek update di background + notifikasi Windows
+├── posters.py             download & cache poster
+├── sources/
+│   ├── bilibili.py        Bilibili Web API
+│   └── tmdb.py            TMDB API v3
+└── ui/
+    ├── app.py             jendela utama
+    ├── widgets.py         kartu show, stepper, cache gambar
+    ├── dialogs.py         form, pencarian, pengaturan, statistik
+    └── theme.py           palet warna light/dark
+tests/                     unit test
+```
+
+</details>
+
+<details>
+<summary><b>🧪 Menjalankan test</b></summary>
+
+<br>
 
 ```bash
 python -m unittest discover -s tests -t .
 ```
 
-## 📦 Build `.exe`
+</details>
 
-```bash
-pyinstaller AnimeTracker.spec --noconfirm
-```
+## 🛠️ Dibangun dengan
 
-Hasilnya `dist/AnimeTracker.exe`. Database (`tracker_db.sqlite`), `settings.json`, dan folder `posters/` dibuat di sebelah `.exe`, jadi data tidak hilang saat aplikasi ditutup.
+[Python](https://www.python.org/) · [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) · SQLite · [Pillow](https://python-pillow.org/) · [win11toast](https://github.com/GitHub30/win11toast) · [PyInstaller](https://pyinstaller.org/)
 
-## 🔄 Upgrade dari versi 1.x
+<sub>Data anime dari Bilibili (Bstation). Data film & series dari <a href="https://www.themoviedb.org/">TMDB</a>. Aplikasi ini menggunakan TMDB API tetapi tidak didukung atau disertifikasi oleh TMDB. Aplikasi pribadi, tidak berafiliasi dengan Bilibili.</sub>
 
-Database lama langsung terbaca, tidak ada yang perlu dilakukan. Saat pertama kali dibuka, versi 2 menambah kolom baru dan **otomatis membuat backup** `tracker_db.sqlite.bak-<tanggal>` sebelum mengubah apa pun. Poster untuk anime yang sudah terhubung ke Bilibili diunduh otomatis pada pengecekan update pertama.
+---
 
-## 🧩 Struktur kode
+<div align="center">
 
-```
-tracker.py                 entry point (dipakai juga oleh PyInstaller)
-animetracker/
-  config.py                path data, konstanta, settings.json
-  db.py                    SQLite: migrasi + CRUD
-  logic.py                 logika murni: parsing episode, status update, aturan notifikasi
-  updater.py               cek update di background + notifikasi Windows
-  posters.py               download & cache poster
-  sources/bilibili.py      Bilibili Web API (search, episode terbaru, link nonton)
-  sources/tmdb.py          TMDB API v3 (search, detail film/series)
-  ui/app.py                jendela utama (sidebar, filter, daftar kartu)
-  ui/widgets.py            kartu show, stepper, cache gambar
-  ui/dialogs.py            form tambah/edit, pencarian, pengaturan, statistik
-  ui/theme.py              palet warna light/dark
-tests/                     unit test (logika, migrasi DB, parser API)
-```
+Dibuat dengan ❤️ untuk para penonton anime. Lihat perubahan terbaru di **[CHANGELOG](CHANGELOG.md)**.
+
+</div>
