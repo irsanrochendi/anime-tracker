@@ -90,21 +90,27 @@ def fetch_latest(season_id, title):
     return None
 
 
-def episode_watch_url(season_id, episode_num):
-    """Link nonton langsung untuk nomor episode tertentu, atau None kalau tidak ditemukan."""
-    if not season_id or not episode_num:
-        return None
+# 'E12', 'EP 12', '12' — bukan 'PV', 'PV 2', 'SP1' dsb.
+_EP_LABEL = re.compile(r'^(?:EP?|Episode)?\s*(\d+)$', re.IGNORECASE)
+
+
+def list_episodes(season_id):
+    """
+    {nomor episode: link nonton} untuk satu season, atau None kalau request gagal
+    (dibedakan dari {} = request berhasil tapi tidak ada episode bernomor).
+    """
     try:
         params = {"s_locale": "en_US", "platform": "web", "season_id": season_id}
         res = requests.get(f"{API}/ogv/play/episodes", params=params, timeout=TIMEOUT,
                            headers=_headers(f"https://www.bilibili.tv/play/{season_id}"))
         if res.status_code != 200:
             return None
+        episodes = {}
         for sec in (res.json().get("data") or {}).get("sections") or []:
             for ep in sec.get("episodes") or []:
-                m = re.search(r'(\d+)', ep.get("short_title_display") or "")
-                if m and int(m.group(1)) == int(episode_num) and ep.get("episode_id"):
-                    return f"{page_url(season_id)}/{ep['episode_id']}"
+                m = _EP_LABEL.match((ep.get("short_title_display") or "").strip())
+                if m and ep.get("episode_id"):
+                    episodes.setdefault(int(m.group(1)), f"{page_url(season_id)}/{ep['episode_id']}")
+        return episodes
     except (requests.RequestException, ValueError):
-        pass
-    return None
+        return None

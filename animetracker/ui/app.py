@@ -323,16 +323,41 @@ class App(ctk.CTk):
         if not season_id:
             return
         next_ep = (show.get("episode") or 0) + 1
-        self.flash(f"Membuka EP {next_ep} di Bilibili…")
+        self.flash(f"Mencari EP {next_ep} di Bilibili…")
 
         def run():
-            url = bilibili.episode_watch_url(season_id, next_ep)
-            if url:
-                webbrowser.open(url)
-            else:
-                self.call_ui(lambda: self.flash(f"EP {next_ep} belum tersedia — membuka halaman season."))
-                webbrowser.open(bilibili.page_url(season_id))
+            plan = logic.plan_next_episode(show, bilibili.list_episodes(season_id))
+            self.call_ui(self._watch_plan_ready, show, plan)
         threading.Thread(target=run, daemon=True).start()
+
+    def _watch_plan_ready(self, show, plan):
+        title = show["title"]
+        if plan.kind == "open":
+            self.flash(f"Membuka {title} EP {plan.episode} di Bilibili…")
+            webbrowser.open(plan.url)
+        elif plan.kind == "finished":
+            self.flash("")
+            if show.get("status") == "Completed":
+                messagebox.showinfo("Sudah tamat", f"'{title}' sudah tamat di EP {plan.last_available} "
+                                    "dan kamu sudah menonton semuanya. 🎉", parent=self)
+            elif messagebox.askyesno(
+                    "Sudah tamat",
+                    f"'{title}' sudah tamat — total {plan.last_available} episode di Bilibili, "
+                    f"dan kamu sudah menonton semuanya.\n\nTandai sebagai Completed?", parent=self):
+                db.update_show(show["id"], {"status": "Completed"})
+                self.reload()
+                self.flash(f"{title} ditandai Completed.")
+        elif plan.kind == "not_yet":
+            self.flash("")
+            latest = f"Episode terbaru di Bilibili: EP {plan.last_available}." if plan.last_available else ""
+            messagebox.showinfo("Episode belum tersedia",
+                                f"EP {plan.episode} dari '{title}' belum rilis di Bilibili.\n{latest}\n\n"
+                                "Kamu akan dapat notifikasi begitu episode baru rilis.", parent=self)
+        else:
+            self.flash("")
+            messagebox.showwarning("Gagal memuat episode",
+                                   f"Daftar episode '{title}' tidak bisa diambil dari Bilibili.\n"
+                                   "Cek koneksi internet lalu coba lagi.", parent=self)
 
     def manual_check(self):
         if self._checking:

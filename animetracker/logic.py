@@ -134,3 +134,27 @@ def should_notify(old_show, remote, user_status):
     # Cek pertama setelah menautkan sumber tidak dinotifikasi: hasilnya langsung terlihat di daftar.
     went_up = old_e is not None and is_newer(new_s, new_e, old_s, old_e)
     return went_up and is_newer(new_s, new_e, user_s, old_show.get("episode") or 0)
+
+
+@dataclass
+class WatchPlan:
+    kind: str          # 'open' | 'finished' | 'not_yet' | 'error'
+    episode: int       # episode yang mau ditonton (episode terakhir + 1)
+    url: str = None
+    last_available: int = 0
+
+
+def plan_next_episode(show, episodes):
+    """
+    Tentukan aksi tombol Nonton dari daftar episode Bilibili ({nomor: url}, None = gagal fetch).
+    Tidak pernah membuka episode lain selain episode berikutnya.
+    """
+    next_ep = (show.get("episode") or 0) + 1
+    if episodes is None:
+        return WatchPlan("error", next_ep)
+    last = max(episodes) if episodes else 0
+    if next_ep in episodes:
+        return WatchPlan("open", next_ep, episodes[next_ep], last)
+    if _is_ended(show) and next_ep > last:
+        return WatchPlan("finished", next_ep, last_available=last)
+    return WatchPlan("not_yet", next_ep, last_available=last)

@@ -40,6 +40,27 @@ class BilibiliTests(unittest.TestCase):
         self.assertEqual(ended["airing_ended"], 1)
 
 
+BILI_EPISODES = {"data": {"sections": [
+    {"episodes": [{"episode_id": "101", "short_title_display": "E1"},
+                  {"episode_id": "110", "short_title_display": "E10"},
+                  {"episode_id": "112", "short_title_display": "E12"}]},
+    {"episodes": [{"episode_id": "900", "short_title_display": "PV"},
+                  {"episode_id": "902", "short_title_display": "PV 2"}]},
+]}}
+
+
+class BilibiliEpisodeTests(unittest.TestCase):
+    @mock.patch("animetracker.sources.bilibili.requests.get", return_value=FakeResponse(BILI_EPISODES))
+    def test_list_episodes_ignores_pv(self, _get):
+        eps = bilibili.list_episodes("2413170")
+        self.assertEqual(sorted(eps), [1, 10, 12])
+        self.assertTrue(eps[12].endswith("/2413170/112"))
+
+    @mock.patch("animetracker.sources.bilibili.requests.get", side_effect=bilibili.requests.ConnectionError)
+    def test_list_episodes_network_error_is_none(self, _get):
+        self.assertIsNone(bilibili.list_episodes("1"))
+
+
 TMDB_TV = {"status": "Returning Series", "poster_path": "/p.jpg",
            "last_episode_to_air": {"season_number": 2, "episode_number": 7},
            "next_episode_to_air": {"air_date": "2026-10-24"}}

@@ -95,6 +95,26 @@ class NotifyTests(unittest.TestCase):
         self.assertFalse(logic.should_notify(old, {"latest_season": 2, "latest_ep": 1}, "Watching"))
 
 
+class WatchPlanTests(unittest.TestCase):
+    EPS = {i: f"url{i}" for i in range(1, 13)}
+
+    def test_opens_exactly_next_episode(self):
+        plan = logic.plan_next_episode(show(episode=9, latest_episode_str="Full"), self.EPS)
+        self.assertEqual((plan.kind, plan.episode, plan.url), ("open", 10, "url10"))
+
+    def test_finished_series_never_opens_other_episode(self):
+        # Bug lama: EP 12 sudah ditonton, klik Nonton malah membuka EP 10.
+        plan = logic.plan_next_episode(show(episode=12, latest_episode_str="Full"), self.EPS)
+        self.assertEqual((plan.kind, plan.url, plan.last_available), ("finished", None, 12))
+
+    def test_ongoing_next_not_released(self):
+        plan = logic.plan_next_episode(show(episode=12, latest_episode_str="Update to EP 12"), self.EPS)
+        self.assertEqual((plan.kind, plan.episode), ("not_yet", 13))
+
+    def test_fetch_error(self):
+        self.assertEqual(logic.plan_next_episode(show(), None).kind, "error")
+
+
 class DbTests(unittest.TestCase):
     def test_migrates_v1_database_with_backup(self):
         import sqlite3
